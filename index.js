@@ -17,5 +17,12 @@ db.serialize(() => {
 
     const app = require('./src/app')(db);
 
+    // Swagger API Documentation
+    const swaggerUi = require('swagger-ui-express');
+    const YAML = require('yamljs');
+    const swaggerDocument = YAML.load('./swagger.yaml');
+
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+    
     app.listen(port, () => console.log(`App started and listening on port ${port}`));
 });
