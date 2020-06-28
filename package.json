@@ -10,6 +10,9 @@
     "test": "eslint index.js src/**/*.js tests/**/*.js & nyc mocha tests/*.test.js",
     "start": "node index.js"
   },
+  "pre-push": [
+    "test"
+  ],
   "keywords": [
     "Xendit"
   ],
@@ -32,6 +35,7 @@
     "eslint-plugin-standard": "^4.0.1",
     "mocha": "^6.1.4",
     "nyc": "^15.1.0",
+    "pre-push": "^0.1.1",
     "supertest": "^4.0.2"
   }
 }
