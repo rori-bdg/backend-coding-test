@@ -11,6 +11,7 @@ const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database(':memory:');
 
 const buildSchemas = require('./src/schemas');
+const logger = require('./config/winston');
 
 db.serialize(() => {
     buildSchemas(db);
@@ -26,6 +27,11 @@ db.serialize(() => {
     app.get('/', (req, res) => res.render('index.html'));
 
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-    
-    app.listen(port, () => console.log(`App started and listening on port ${port}`));
+          
+    app.listen(port, () =>
+        logger.log({
+            level: 'info',
+            message: `App started and listening on port ${port}`
+        })
+    );
 });
