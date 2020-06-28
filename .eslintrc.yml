@@ -6,6 +6,11 @@ env:
   mocha: true
 extends:
   - standard
+  - "plugin:@typescript-eslint/recommended"
+parser: "@typescript-eslint/parser"
+plugins:
+  - "@typescript-eslint"
 parserOptions:
   ecmaVersion: 11
-rules: {}
+rules:
+  '@typescript-eslint/no-var-requires': 0
