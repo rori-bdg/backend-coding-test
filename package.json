@@ -7,24 +7,37 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha tests",
+    "test": "eslint index.js src/**/*.js tests/**/*.js & nyc mocha tests/*.test.js",
     "start": "node index.js"
   },
+  "pre-push": [
+    "test"
+  ],
   "keywords": [
     "Xendit"
   ],
   "author": "Bo",
   "license": "ISC",
   "dependencies": {
+    "app-root-path": "^3.0.0",
     "body-parser": "^1.19.0",
     "express": "^4.16.4",
     "http-status-codes": "^1.4.0",
     "sqlite3": "^4.0.6",
     "swagger-ui-express": "^4.1.4",
+    "winston": "^3.3.3",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
+    "eslint": "^7.3.1",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
     "mocha": "^6.1.4",
+    "nyc": "^15.1.0",
+    "pre-push": "^0.1.1",
     "supertest": "^4.0.2"
   }
 }
