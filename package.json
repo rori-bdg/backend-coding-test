@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "eslint index.js src/**/*.js tests/**/*.js & nyc mocha tests/*.test.js",
+    "test": "eslint . & nyc mocha tests/*.test.js",
     "start": "node index.js"
   },
   "pre-push": [
