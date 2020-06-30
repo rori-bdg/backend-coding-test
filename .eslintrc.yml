@@ -7,9 +7,11 @@ env:
 extends:
   - standard
   - "plugin:@typescript-eslint/recommended"
+  - "plugin:security/recommended"
 parser: "@typescript-eslint/parser"
 plugins:
   - "@typescript-eslint"
+  - security
 parserOptions:
   ecmaVersion: 11
 rules:
