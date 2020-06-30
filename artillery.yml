@@ -1,0 +1,34 @@
+config:
+  target: 'http://localhost:8010'
+  ensure:
+    p99: 50
+  phases:
+    - duration: 30
+      arrivalRate: 100
+scenarios:
+  - name: "Post New Rides"
+    flow:
+      - post:
+          url: "/rides"
+          json:
+            start_lat: 10
+            start_long: 50
+            end_lat: 20
+            end_long: 70
+            rider_name: "Test Rider"
+            driver_name: "Test Driver"
+            driver_vehicle: "Test Vehicle"
+          capture:
+            json: "$[0].rideID"
+            as: "id"
+  - name: "Get List of Riders"
+    flow:
+      - get:
+          url: "/rides"
+          qs:
+            - page_number: 1
+            - rows_per_age: 30
+  - name: "Get Ride by ID"
+    flow:
+      - get:
+          url: "/rides/{{ id }}"
