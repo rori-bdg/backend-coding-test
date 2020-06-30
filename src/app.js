@@ -9,7 +9,15 @@ const jsonParser = bodyParser.json()
 
 const logger = require('../config/winston')
 
+const pdb = require('./promised-db')
+
+const validator = require('./rides-validator')
+
 module.exports = (db) => {
+  const { allCustomAsync, runCustomAsync } = pdb(db)
+
+  const { calculateStatusCode } = validator()
+
   app.get('/health', (req, res) => {
     const response = 'Healthy'
 
@@ -21,7 +29,7 @@ module.exports = (db) => {
     res.send(response)
   })
 
-  app.post('/rides', jsonParser, (req, res) => {
+  app.post('/rides', jsonParser, async (req, res) => {
     const startLatitude = Number(req.body.start_lat)
     const startLongitude = Number(req.body.start_long)
     const endLatitude = Number(req.body.end_lat)
@@ -77,32 +85,22 @@ module.exports = (db) => {
 
     var values = [req.body.start_lat, req.body.start_long, req.body.end_lat, req.body.end_long, req.body.rider_name, req.body.driver_name, req.body.driver_vehicle]
 
-    db.run('INSERT INTO Rides(startLat, startLong, endLat, endLong, riderName, driverName, driverVehicle) VALUES (?, ?, ?, ?, ?, ?, ?)', values, function (err) {
-      if (err) {
-        return res
-          .status(httpStatus.INTERNAL_SERVER_ERROR)
-          .send({
-            error_code: 'SERVER_ERROR',
-            message: 'Unknown error'
-          })
-      }
+    try {
+      const result = await runCustomAsync('INSERT INTO Rides(startLat, startLong, endLat, endLong, riderName, driverName, driverVehicle) VALUES (?, ?, ?, ?, ?, ?, ?)', values)
 
-      db.all('SELECT * FROM Rides WHERE rideID = ?', this.lastID, function (err, rows) {
-        if (err) {
-          return res
-            .status(httpStatus.INTERNAL_SERVER_ERROR)
-            .send({
-              error_code: 'SERVER_ERROR',
-              message: 'Unknown error'
-            })
-        }
+      const rows = await allCustomAsync('SELECT * FROM Rides WHERE rideID = ?', result.lastID)
 
-        res.send(rows)
-      })
-    })
+      res.send(rows)
+    } catch (err) {
+      const status = calculateStatusCode(err.error_code)
+
+      return res
+        .status(status)
+        .send(err)
+    }
   })
 
-  app.get('/rides', (req, res) => {
+  app.get('/rides', async (req, res) => {
     const pageNumber = Number(req.query.page_number) || 0
     const rowsPerPage = Number(req.query.rows_per_page) || 0
 
@@ -112,51 +110,31 @@ module.exports = (db) => {
     const ridesQuery = 'SELECT * FROM Rides' + (usePagination ? ' LIMIT ? OFFSET ?' : '')
     const ridesQueryParams = usePagination ? [rowsPerPage, pageOffset] : []
 
-    db.all(ridesQuery, ridesQueryParams, function (err, rows) {
-      if (err) {
-        return res
-          .status(httpStatus.INTERNAL_SERVER_ERROR)
-          .send({
-            error_code: 'SERVER_ERROR',
-            message: 'Unknown error'
-          })
-      }
-
-      if (rows.length === 0) {
-        return res
-          .status(httpStatus.BAD_REQUEST)
-          .send({
-            error_code: 'RIDES_NOT_FOUND_ERROR',
-            message: 'Could not find any rides'
-          })
-      }
+    try {
+      const rows = await allCustomAsync(ridesQuery, ridesQueryParams)
 
       res.send(rows)
-    })
+    } catch (err) {
+      const status = calculateStatusCode(err.error_code)
+
+      return res
+        .status(status)
+        .send(err)
+    }
   })
 
-  app.get('/rides/:id', (req, res) => {
-    db.all(`SELECT * FROM Rides WHERE rideID='${req.params.id}'`, function (err, rows) {
-      if (err) {
-        return res
-          .status(httpStatus.INTERNAL_SERVER_ERROR)
-          .send({
-            error_code: 'SERVER_ERROR',
-            message: 'Unknown error'
-          })
-      }
-
-      if (rows.length === 0) {
-        return res
-          .status(httpStatus.BAD_REQUEST)
-          .send({
-            error_code: 'RIDES_NOT_FOUND_ERROR',
-            message: 'Could not find any rides'
-          })
-      }
+  app.get('/rides/:id', async (req, res) => {
+    try {
+      const rows = await allCustomAsync('SELECT * FROM Rides WHERE rideID = ?', req.params.id)
 
       res.send(rows)
-    })
+    } catch (err) {
+      const status = calculateStatusCode(err.error_code)
+
+      return res
+        .status(status)
+        .send(err)
+    }
   })
 
   return app
