@@ -62,15 +62,15 @@ describe('API tests', () => {
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(200)
-        .expect((response) => {
+        .then((response) => {
           assert.equal(response.body.length, 1, 'Expected 1 ride.')
           assert.equal(response.body[0].startLat, rideRequest.start_lat, 'Expected startLat ' + rideRequest.start_lat + '.')
+          done()
         })
-        .then(done())
     })
 
     it('should return UNPROCESSABLE_ENTITY for invalid start_lat', (done) => {
-      var invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
+      const invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
       invalidRideRequest.start_lat = -500
 
       request(app)
@@ -82,7 +82,7 @@ describe('API tests', () => {
     })
 
     it('should return UNPROCESSABLE_ENTITY for invalid start_long', (done) => {
-      var invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
+      const invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
       invalidRideRequest.start_long = -500
 
       request(app)
@@ -94,7 +94,7 @@ describe('API tests', () => {
     })
 
     it('should return UNPROCESSABLE_ENTITY for invalid end_lat', (done) => {
-      var invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
+      const invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
       invalidRideRequest.end_lat = -500
 
       request(app)
@@ -106,7 +106,7 @@ describe('API tests', () => {
     })
 
     it('should return UNPROCESSABLE_ENTITY for invalid end_long', (done) => {
-      var invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
+      const invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
       invalidRideRequest.end_long = -500
 
       request(app)
@@ -118,7 +118,7 @@ describe('API tests', () => {
     })
 
     it('should return UNPROCESSABLE_ENTITY for empty rider_name', (done) => {
-      var invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
+      const invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
       invalidRideRequest.rider_name = ''
 
       request(app)
@@ -130,7 +130,7 @@ describe('API tests', () => {
     })
 
     it('should return UNPROCESSABLE_ENTITY for empty driver_name', (done) => {
-      var invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
+      const invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
       invalidRideRequest.driver_name = ''
 
       request(app)
@@ -142,7 +142,7 @@ describe('API tests', () => {
     })
 
     it('should return UNPROCESSABLE_ENTITY for empty driver_vehicle', (done) => {
-      var invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
+      const invalidRideRequest = JSON.parse(JSON.stringify(rideRequest))
       invalidRideRequest.driver_vehicle = ''
 
       request(app)
@@ -154,7 +154,7 @@ describe('API tests', () => {
     })
 
     it('should return INTERNAL_SERVER_ERROR when server error upon INSERT', (done) => {
-      var runStub = sinon.stub(db, 'run').yields(Error('Database INSERT failed'), null)
+      const runStub = sinon.stub(db, 'run').yields(Error('Database INSERT failed'), null)
 
       request(app)
         .post('/rides')
@@ -162,17 +162,15 @@ describe('API tests', () => {
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(500)
-        .expect((response) => {
+        .then((response) => {
           assert.equal(response.body.error_code, 'SERVER_ERROR', 'Expected SERVER_ERROR.')
-        })
-        .then(() => {
           done()
           runStub.restore()
         })
     })
 
     it('should return INTERNAL_SERVER_ERROR when server error upon SELECT', (done) => {
-      var allStub = sinon.stub(db, 'all').yields(Error('Database SELECT failed'), null)
+      const allStub = sinon.stub(db, 'all').yields(Error('Database SELECT failed'), null)
 
       request(app)
         .post('/rides')
@@ -180,10 +178,8 @@ describe('API tests', () => {
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(500)
-        .expect((response) => {
+        .then((response) => {
           assert.equal(response.body.error_code, 'SERVER_ERROR', 'Expected SERVER_ERROR.')
-        })
-        .then(() => {
           done()
           allStub.restore()
         })
@@ -207,10 +203,10 @@ describe('API tests', () => {
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
                 .expect(200)
-                .expect((response) => {
+                .then((response) => {
                   assert.equal(response.body.length, 2, 'Expected 2 rides.')
+                  done()
                 })
-                .then(done())
             })
         })
     })
@@ -224,20 +220,63 @@ describe('API tests', () => {
     })
 
     it('should return INTERNAL_SERVER_ERROR when server error upon SELECT', (done) => {
-      var allStub = sinon.stub(db, 'all').yields(Error('Database SELECT failed'), null)
+      const allStub = sinon.stub(db, 'all').yields(Error('Database SELECT failed'), null)
 
       request(app)
         .get('/rides')
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(500)
-        .expect((response) => {
+        .then((response) => {
           assert.equal(response.body.error_code, 'SERVER_ERROR', 'Expected SERVER_ERROR.')
-        })
-        .then(() => {
           done()
           allStub.restore()
         })
+    })
+
+    describe('Pagination', () => {
+      beforeEach((done) => {
+        for (let i = 0; i < 30; i++) {
+          db.run(`
+              INSERT INTO Rides (startLat, startLong, endLat, endLong, riderName, driverName, driverVehicle)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+          `, [10, 50, 20, 70, 'Test Rider ' + i, 'Test Driver ' + i, 'Test Vehicle ' + i])
+        }
+        done()
+      })
+
+      it('should return list of rides on page_number 1 and rows_per_page 20', (done) => {
+        request(app)
+          .get('/rides?page_number=1&rows_per_page=20')
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .then((response) => {
+            assert.equal(response.body.length, 20, 'Expected 20 rides.')
+            done()
+          })
+      })
+
+      it('should return unpaged rows for page_number=0', (done) => {
+        request(app)
+          .get('/rides?page_number=0')
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .then((response) => {
+            assert.equal(response.body.length, 30, 'Expected 30 rides.')
+            done()
+          })
+      })
+
+      it('should return unpaged rows for rows_per_page=0', (done) => {
+        request(app)
+          .get('/rides?rows_per_page=0')
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .then((response) => {
+            assert.equal(response.body.length, 30, 'Expected 30 rides.')
+            done()
+          })
+      })
     })
   })
 
@@ -253,10 +292,10 @@ describe('API tests', () => {
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200)
-            .expect((response) => {
+            .then((response) => {
               assert.equal(response.body.length, 1, 'Expected 1 ride.')
+              done()
             })
-            .then(done())
         })
     })
 
@@ -269,17 +308,15 @@ describe('API tests', () => {
     })
 
     it('should return INTERNAL_SERVER_ERROR when server error upon SELECT', (done) => {
-      var allStub = sinon.stub(db, 'all').yields(Error('Database SELECT failed'), null)
+      const allStub = sinon.stub(db, 'all').yields(Error('Database SELECT failed'), null)
 
       request(app)
         .get('/rides/1')
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(500)
-        .expect((response) => {
+        .then((response) => {
           assert.equal(response.body.error_code, 'SERVER_ERROR', 'Expected SERVER_ERROR.')
-        })
-        .then(() => {
           done()
           allStub.restore()
         })
