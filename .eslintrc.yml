@@ -14,3 +14,4 @@ parserOptions:
   ecmaVersion: 11
 rules:
   '@typescript-eslint/no-var-requires': 0
+  'no-throw-literal': 0

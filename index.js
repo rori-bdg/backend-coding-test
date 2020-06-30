@@ -1,6 +1,5 @@
 'use strict'
 
-const express = require('express')
 const port = 8010
 
 const sqlite3 = require('sqlite3').verbose()
@@ -13,16 +12,6 @@ db.serialize(() => {
   buildSchemas(db)
 
   const app = require('./src/app')(db)
-
-  // Swagger API Documentation
-  const swaggerUi = require('swagger-ui-express')
-  const YAML = require('yamljs')
-  const swaggerDocument = YAML.load('./swagger.yaml')
-
-  app.use(express.static('public'))
-  app.get('/', (req, res) => res.render('index.html'))
-
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
   app.listen(port, () =>
     logger.log({

@@ -27,11 +27,11 @@ module.exports = (db) => {
     return new Promise(function (resolve, reject) {
       db.run(sql, params, function (err) {
         if (err) {
-          var responseObj = {
+          var serverErrorObj = {
             error_code: 'SERVER_ERROR',
             message: 'Unknown error'
           }
-          reject(responseObj)
+          reject(serverErrorObj)
         } else {
           resolve(this)
         }
