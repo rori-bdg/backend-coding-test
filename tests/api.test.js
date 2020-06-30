@@ -39,6 +39,24 @@ describe('API tests', () => {
     })
   })
 
+  describe('GET /', () => {
+    it('should return index.html', (done) => {
+      request(app)
+        .get('/')
+        .expect('Content-Type', /html/)
+        .expect(200, done)
+    })
+  })
+
+  describe('GET /api-docs', () => {
+    it('should return swagger documentation page', (done) => {
+      request(app)
+        .get('/api-docs')
+        .expect('Content-Type', /html/)
+        .expect(301, done)
+    })
+  })
+
   describe('GET /health', () => {
     it('should return health', (done) => {
       request(app)
