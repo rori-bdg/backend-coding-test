@@ -11,7 +11,7 @@ const logger = require('../config/winston')
 
 module.exports = (db) => {
   app.get('/health', (req, res) => {
-    var response = 'Healthy'
+    const response = 'Healthy'
 
     logger.log({
       level: 'info',
@@ -103,7 +103,16 @@ module.exports = (db) => {
   })
 
   app.get('/rides', (req, res) => {
-    db.all('SELECT * FROM Rides', function (err, rows) {
+    const pageNumber = Number(req.query.page_number) || 0
+    const rowsPerPage = Number(req.query.rows_per_page) || 0
+
+    const pageOffset = (pageNumber - 1) * rowsPerPage
+
+    const usePagination = pageNumber > 0 && rowsPerPage > 0
+    const ridesQuery = 'SELECT * FROM Rides' + (usePagination ? ' LIMIT ? OFFSET ?' : '')
+    const ridesQueryParams = usePagination ? [rowsPerPage, pageOffset] : []
+
+    db.all(ridesQuery, ridesQueryParams, function (err, rows) {
       if (err) {
         return res
           .status(httpStatus.INTERNAL_SERVER_ERROR)

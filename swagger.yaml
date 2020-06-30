@@ -149,6 +149,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+      parameters:
+        - name: page_number
+          in: query
+          required: false
+          description: The page number. Use blank or 0 to omit pagination.
+          schema:
+            type: integer
+        - name: rows_per_page
+          in: query
+          required: false
+          description: The rows per page limit. Use blank or 0 to omit pagination.
+          schema:
+            type: integer
 
   /rides/{id}:
     get:
