@@ -15,7 +15,7 @@ module.exports = (db) => {
   // Swagger API Documentation
   const swaggerUi = require('swagger-ui-express')
   const YAML = require('yamljs')
-  const swaggerDocument = YAML.load('./swagger.yaml')
+  const swaggerDocument = YAML.load('./swagger.yml')
 
   app.use(express.static('public'))
   app.get('/', (req, res) => res.render('index.html'))
