@@ -202,6 +202,23 @@ describe('API tests', () => {
           allStub.restore()
         })
     })
+
+    it('should block SQL injection attack but still save data', (done) => {
+      const attackRideRequest = JSON.parse(JSON.stringify(rideRequest))
+      attackRideRequest.driver_vehicle = 'Vehicle); DELETE FROM Rides WHERE (1 = 1'
+
+      request(app)
+        .post('/rides')
+        .send(attackRideRequest)
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .then((response) => {
+          assert.equal(response.body.length, 1, 'Expected 1 ride.')
+          assert.equal(response.body[0].driverVehicle, attackRideRequest.driver_vehicle, 'Expected driverVehicle ' + attackRideRequest.driver_vehicle + '.')
+          done()
+        })
+    })
   })
 
   describe('GET /rides', () => {
@@ -295,6 +312,17 @@ describe('API tests', () => {
             done()
           })
       })
+
+      it('should block SQL injection attack but still return unpaged data', (done) => {
+        request(app)
+          .get('/rides?page_number=1&rows_per_page=20; DROP TABLE Rides;')
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .then((response) => {
+            assert.equal(response.body.length, 30, 'Expected 30 rides.')
+            done()
+          })
+      })
     })
   })
 
@@ -338,6 +366,13 @@ describe('API tests', () => {
           done()
           allStub.restore()
         })
+    })
+
+    it('should block SQL injection attack with BAD_REQUEST status code', (done) => {
+      request(app)
+        .get('/rides/1\' OR 1 = 1;')
+        .expect('Content-Type', /json/)
+        .expect(400, done)
     })
   })
 })
